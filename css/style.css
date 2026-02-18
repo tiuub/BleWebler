@@ -785,6 +785,29 @@ input:checked+.slider:before {
    Modern QR UI Styles
    ========================================= */
 
+
+.fixed-layout-controls {
+  margin-bottom: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.fixed-layout-controls h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.fixed-layout-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (max-width: 640px) {
+  .fixed-layout-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .form-group-modern {
   display: flex;
   flex-direction: column;

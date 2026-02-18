@@ -989,6 +989,134 @@ function clearTextControls() {
   });
 }
 
+
+function renderFixedLayout({ link = '', heading = '', collection = '', itemId = '' }) {
+  if (!canvas) return;
+
+  if (typeof QRCode === 'undefined') {
+    alert("QR code library failed to load. Please refresh the page.");
+    return;
+  }
+
+  const cleanedLink = (link || '').trim() || 'https://example.com';
+  const cleanedHeading = (heading || '').trim();
+  const cleanedCollection = (collection || '').trim();
+  const cleanedId = (itemId || '').trim();
+
+  // Keep padding guides but remove existing content objects
+  canvas.getObjects().slice().forEach(obj => {
+    if (!obj.paddingGuide) {
+      canvas.remove(obj);
+    }
+  });
+
+  const bounds = getPaddingBounds();
+  const contentWidth = bounds.right - bounds.left;
+  const contentHeight = bounds.bottom - bounds.top;
+
+  const qrDimension = Math.max(44, Math.min(contentHeight - 8, Math.round(contentHeight * 0.6)));
+  const qrX = bounds.left;
+  const qrY = bounds.top + (contentHeight - qrDimension) / 2;
+  const textX = qrX + qrDimension + 8;
+  const textWidth = Math.max(40, bounds.right - textX);
+
+  const textLines = [
+    { text: cleanedHeading, fontSize: 18, fontWeight: 'bold' },
+    { text: cleanedCollection, fontSize: 14, fontWeight: 'normal' },
+    { text: cleanedId, fontSize: 14, fontWeight: 'normal' }
+  ];
+
+  const usedLines = textLines.filter(line => line.text);
+  const linesToRender = usedLines.length ? usedLines : [{ text: '-', fontSize: 14, fontWeight: 'normal' }];
+  const estimatedHeight = linesToRender.reduce((sum, line) => sum + line.fontSize + 3, 0) - 3;
+  let currentY = bounds.top + (contentHeight - estimatedHeight) / 2;
+
+  linesToRender.forEach(line => {
+    const textObj = new fabric.Text(line.text, {
+      left: textX,
+      top: currentY,
+      fontFamily: 'Arial',
+      fontSize: line.fontSize,
+      fontWeight: line.fontWeight,
+      fill: '#000000',
+      selectable: true,
+      evented: true
+    });
+
+    if (textObj.width > textWidth) {
+      textObj.set({
+        scaleX: textWidth / textObj.width,
+        scaleY: textWidth / textObj.width
+      });
+    }
+
+    canvas.add(textObj);
+    currentY += line.fontSize + 3;
+  });
+
+  const tempDiv = document.createElement('div');
+  tempDiv.style.position = 'absolute';
+  tempDiv.style.left = '-9999px';
+  tempDiv.style.width = '160px';
+  tempDiv.style.height = '160px';
+  document.body.appendChild(tempDiv);
+
+  const qrcode = new QRCode(tempDiv, {
+    text: cleanedLink,
+    width: 160,
+    height: 160,
+    colorDark: '#000000',
+    colorLight: '#FFFFFF',
+    correctLevel: QRCode.CorrectLevel.M
+  });
+
+  let moduleCount = 21;
+  if (qrcode._oQRCode && qrcode._oQRCode.moduleCount) {
+    moduleCount = qrcode._oQRCode.moduleCount;
+  }
+
+  setTimeout(() => {
+    const qrImg = tempDiv.querySelector('img');
+    const qrCanvas = tempDiv.querySelector('canvas');
+
+    let imageSrc = '';
+    if (qrImg && qrImg.src) {
+      imageSrc = qrImg.src;
+    } else if (qrCanvas) {
+      imageSrc = qrCanvas.toDataURL('image/png');
+    }
+
+    if (!imageSrc) {
+      document.body.removeChild(tempDiv);
+      canvas.renderAll();
+      return;
+    }
+
+    fabric.Image.fromURL(imageSrc, function (img) {
+      const snappedDimension = Math.max(moduleCount, Math.floor(qrDimension / moduleCount) * moduleCount);
+      const scale = snappedDimension / img.width;
+
+      img.set({
+        left: qrX,
+        top: qrY,
+        scaleX: scale,
+        scaleY: scale,
+        isQRCode: true,
+        qrContent: cleanedLink,
+        qrModuleCount: moduleCount,
+        lockUniScaling: true,
+        lockScalingFlip: true
+      });
+
+      canvas.add(img);
+      canvas.sendToBack(img);
+      canvas.renderAll();
+      document.body.removeChild(tempDiv);
+      clearTextControls();
+    });
+  }, 50);
+}
+
 // Function to re-apply dithering to the active image
 function applyDitheringToActiveImage() {
   const activeObject = canvas.getActiveObject();
@@ -1177,6 +1305,10 @@ window.fabricEditor = {
 
   getPaddingBounds: function () {
     return getPaddingBounds();
+  },
+
+  renderFixedLayout: function (data) {
+    renderFixedLayout(data || {});
   }
 };
 
