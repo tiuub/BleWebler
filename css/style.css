@@ -798,14 +798,10 @@ input:checked+.slider:before {
   font-size: 1rem;
 }
 
-.fixed-layout-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-@media (max-width: 640px) {
-  .fixed-layout-grid {
-    grid-template-columns: 1fr;
-  }
+.fixed-layout-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
 }
 
 .form-group-modern {

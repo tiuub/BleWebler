@@ -598,6 +598,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const urlCollection = urlParams.get('collection');
     const urlId = urlParams.get('id');
 
+    if (fixedLinkInput) fixedLinkInput.value = urlLink || '';
+    if (fixedHeadingInput) fixedHeadingInput.value = urlHeading || '';
+    if (fixedCollectionInput) fixedCollectionInput.value = urlCollection || '';
+    if (fixedIdInput) fixedIdInput.value = urlId || '';
+
     // Infinite Paper Checkbox Logic
     if (infinitePaperCheckbox && paperWidthInput && paperWidthContainer) {
       infinitePaperCheckbox.addEventListener("change", (e) => {
@@ -650,11 +655,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
         applyPrinterSettings(pIndex, w, h, urlInfinite, pTop, pBottom, pLeft, pRight);
 
-        if (fixedLinkInput) fixedLinkInput.value = urlLink || "";
-        if (fixedHeadingInput) fixedHeadingInput.value = urlHeading || "";
-        if (fixedCollectionInput) fixedCollectionInput.value = urlCollection || "";
-        if (fixedIdInput) fixedIdInput.value = urlId || "";
-
         if (urlLink || urlHeading || urlCollection || urlId) {
           applyFixedLayoutFromInputs();
         }
@@ -671,6 +671,10 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }
       startupModal.classList.add("show");
+
+      if (urlLink || urlHeading || urlCollection || urlId) {
+        applyFixedLayoutFromInputs();
+      }
     }
 
     if (settingsBtn) {

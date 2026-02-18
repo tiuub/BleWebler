@@ -1013,12 +1013,59 @@ function renderFixedLayout({ link = '', heading = '', collection = '', itemId = 
   const bounds = getPaddingBounds();
   const contentWidth = bounds.right - bounds.left;
   const contentHeight = bounds.bottom - bounds.top;
+  const horizontalInset = 4;
+  const innerLeft = bounds.left + horizontalInset;
+  const innerRight = bounds.right - horizontalInset;
 
-  const qrDimension = Math.max(44, Math.min(contentHeight - 8, Math.round(contentHeight * 0.6)));
-  const qrX = bounds.left;
+  const targetQrDimension = Math.max(40, Math.min(contentHeight - 8, Math.round(contentHeight * 0.58)));
+
+  // Probe module count first to pick the cleanest integer module size for max available space
+  const probeDiv = document.createElement('div');
+  probeDiv.style.position = 'absolute';
+  probeDiv.style.left = '-9999px';
+  probeDiv.style.width = '16px';
+  probeDiv.style.height = '16px';
+  document.body.appendChild(probeDiv);
+
+  const probeQr = new QRCode(probeDiv, {
+    text: cleanedLink,
+    width: 16,
+    height: 16,
+    colorDark: '#000000',
+    colorLight: '#FFFFFF',
+    correctLevel: QRCode.CorrectLevel.M
+  });
+
+  let moduleCount = 21;
+  if (probeQr._oQRCode && probeQr._oQRCode.moduleCount) {
+    moduleCount = probeQr._oQRCode.moduleCount;
+  }
+
+  // Build a QR with integer pixels-per-module and no scaling afterwards.
+  let modulePixelSize = Math.floor(targetQrDimension / moduleCount);
+  if (modulePixelSize < 1) modulePixelSize = 1;
+  if (modulePixelSize > 8) modulePixelSize = 8;
+  const qrDimension = moduleCount * modulePixelSize;
+
+  probeDiv.innerHTML = '';
+
+  const qrcode = new QRCode(probeDiv, {
+    text: cleanedLink,
+    width: qrDimension,
+    height: qrDimension,
+    colorDark: '#000000',
+    colorLight: '#FFFFFF',
+    correctLevel: QRCode.CorrectLevel.M
+  });
+
+  if (qrcode._oQRCode && qrcode._oQRCode.moduleCount) {
+    moduleCount = qrcode._oQRCode.moduleCount;
+  }
+
+  const qrX = innerLeft;
   const qrY = bounds.top + (contentHeight - qrDimension) / 2;
   const textX = qrX + qrDimension + 8;
-  const textWidth = Math.max(40, bounds.right - textX);
+  const textWidth = Math.max(20, innerRight - textX);
 
   const textLines = [
     { text: cleanedHeading, fontSize: 18, fontWeight: 'bold' },
@@ -1044,9 +1091,10 @@ function renderFixedLayout({ link = '', heading = '', collection = '', itemId = 
     });
 
     if (textObj.width > textWidth) {
+      const ratio = textWidth / textObj.width;
       textObj.set({
-        scaleX: textWidth / textObj.width,
-        scaleY: textWidth / textObj.width
+        scaleX: ratio,
+        scaleY: ratio
       });
     }
 
@@ -1054,30 +1102,9 @@ function renderFixedLayout({ link = '', heading = '', collection = '', itemId = 
     currentY += line.fontSize + 3;
   });
 
-  const tempDiv = document.createElement('div');
-  tempDiv.style.position = 'absolute';
-  tempDiv.style.left = '-9999px';
-  tempDiv.style.width = '160px';
-  tempDiv.style.height = '160px';
-  document.body.appendChild(tempDiv);
-
-  const qrcode = new QRCode(tempDiv, {
-    text: cleanedLink,
-    width: 160,
-    height: 160,
-    colorDark: '#000000',
-    colorLight: '#FFFFFF',
-    correctLevel: QRCode.CorrectLevel.M
-  });
-
-  let moduleCount = 21;
-  if (qrcode._oQRCode && qrcode._oQRCode.moduleCount) {
-    moduleCount = qrcode._oQRCode.moduleCount;
-  }
-
   setTimeout(() => {
-    const qrImg = tempDiv.querySelector('img');
-    const qrCanvas = tempDiv.querySelector('canvas');
+    const qrImg = probeDiv.querySelector('img');
+    const qrCanvas = probeDiv.querySelector('canvas');
 
     let imageSrc = '';
     if (qrImg && qrImg.src) {
@@ -1087,31 +1114,29 @@ function renderFixedLayout({ link = '', heading = '', collection = '', itemId = 
     }
 
     if (!imageSrc) {
-      document.body.removeChild(tempDiv);
+      document.body.removeChild(probeDiv);
       canvas.renderAll();
       return;
     }
 
     fabric.Image.fromURL(imageSrc, function (img) {
-      const snappedDimension = Math.max(moduleCount, Math.floor(qrDimension / moduleCount) * moduleCount);
-      const scale = snappedDimension / img.width;
-
       img.set({
         left: qrX,
         top: qrY,
-        scaleX: scale,
-        scaleY: scale,
+        scaleX: 1,
+        scaleY: 1,
         isQRCode: true,
         qrContent: cleanedLink,
         qrModuleCount: moduleCount,
         lockUniScaling: true,
-        lockScalingFlip: true
+        lockScalingFlip: true,
+        objectCaching: false
       });
 
       canvas.add(img);
       canvas.sendToBack(img);
       canvas.renderAll();
-      document.body.removeChild(tempDiv);
+      document.body.removeChild(probeDiv);
       clearTextControls();
     });
   }, 50);
