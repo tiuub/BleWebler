@@ -338,6 +338,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const dimensionControls = document.getElementById("dimensionControls");
   const widthInput = document.getElementById("widthInput");
   const heightInput = document.getElementById("heightInput");
+  const fixedLinkInput = document.getElementById("fixedLinkInput");
+  const fixedHeadingInput = document.getElementById("fixedHeadingInput");
+  const fixedCollectionInput = document.getElementById("fixedCollectionInput");
+  const fixedIdInput = document.getElementById("fixedIdInput");
 
   // Function to get current printer dpm
   const getCurrentPrinterDpm = () => {
@@ -381,6 +385,19 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
   };
+
+
+  const applyFixedLayoutFromInputs = () => {
+    if (!window.fabricEditor || !window.fabricEditor.renderFixedLayout) return;
+
+    window.fabricEditor.renderFixedLayout({
+      link: fixedLinkInput ? fixedLinkInput.value : '',
+      heading: fixedHeadingInput ? fixedHeadingInput.value : '',
+      collection: fixedCollectionInput ? fixedCollectionInput.value : '',
+      itemId: fixedIdInput ? fixedIdInput.value : ''
+    });
+  };
+
 
   if (resizeHandle) {
     const startDrag = (clientX) => {
@@ -482,6 +499,13 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  if (fixedLinkInput && fixedHeadingInput && fixedCollectionInput && fixedIdInput) {
+    [fixedLinkInput, fixedHeadingInput, fixedCollectionInput, fixedIdInput].forEach((input) => {
+      input.addEventListener('input', applyFixedLayoutFromInputs);
+      input.addEventListener('change', applyFixedLayoutFromInputs);
+    });
+  }
+
   // Update dimension inputs when canvas size changes (but not when updating from inputs)
   if (window.fabricEditor) {
     const originalUpdateCanvasSize = window.fabricEditor.updateCanvasSize;
@@ -569,6 +593,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const urlPaddingBottom = urlParams.get('paddingBottom');
     const urlPaddingLeft = urlParams.get('paddingLeft');
     const urlPaddingRight = urlParams.get('paddingRight');
+    const urlLink = urlParams.get('link');
+    const urlHeading = urlParams.get('heading');
+    const urlCollection = urlParams.get('collection');
+    const urlId = urlParams.get('id');
+
+    if (fixedLinkInput) fixedLinkInput.value = urlLink || '';
+    if (fixedHeadingInput) fixedHeadingInput.value = urlHeading || '';
+    if (fixedCollectionInput) fixedCollectionInput.value = urlCollection || '';
+    if (fixedIdInput) fixedIdInput.value = urlId || '';
 
     // Infinite Paper Checkbox Logic
     if (infinitePaperCheckbox && paperWidthInput && paperWidthContainer) {
@@ -621,13 +654,27 @@ document.addEventListener("DOMContentLoaded", () => {
         if (paddingRightInput) paddingRightInput.value = pRight;
 
         applyPrinterSettings(pIndex, w, h, urlInfinite, pTop, pBottom, pLeft, pRight);
+
+        if (urlLink || urlHeading || urlCollection || urlId) {
+          applyFixedLayoutFromInputs();
+        }
       } else {
         // Invalid params, show modal
         startupModal.classList.add("show");
       }
     } else {
-      // No URL params, show modal
+      // No URL params, default to P15 and show modal
+      if (typeof supportedPrinters !== "undefined") {
+        const p15Index = supportedPrinters.findIndex((printer) => printer.name === "Marklife_P15");
+        if (p15Index >= 0) {
+          printerSelect.value = String(p15Index);
+        }
+      }
       startupModal.classList.add("show");
+
+      if (urlLink || urlHeading || urlCollection || urlId) {
+        applyFixedLayoutFromInputs();
+      }
     }
 
     if (settingsBtn) {
@@ -682,7 +729,15 @@ document.addEventListener("DOMContentLoaded", () => {
       newUrl.searchParams.set('paddingBottom', paddingBottomMm);
       newUrl.searchParams.set('paddingLeft', paddingLeftMm);
       newUrl.searchParams.set('paddingRight', paddingRightMm);
+
+      if (fixedLinkInput) newUrl.searchParams.set('link', fixedLinkInput.value || '');
+      if (fixedHeadingInput) newUrl.searchParams.set('heading', fixedHeadingInput.value || '');
+      if (fixedCollectionInput) newUrl.searchParams.set('collection', fixedCollectionInput.value || '');
+      if (fixedIdInput) newUrl.searchParams.set('id', fixedIdInput.value || '');
+
       window.history.replaceState({}, '', newUrl);
+
+      applyFixedLayoutFromInputs();
     };
 
     // Add event listeners to padding inputs for real-time updates
@@ -727,7 +782,15 @@ document.addEventListener("DOMContentLoaded", () => {
       newUrl.searchParams.set('paddingBottom', paddingBottomMm);
       newUrl.searchParams.set('paddingLeft', paddingLeftMm);
       newUrl.searchParams.set('paddingRight', paddingRightMm);
+
+      if (fixedLinkInput) newUrl.searchParams.set('link', fixedLinkInput.value || '');
+      if (fixedHeadingInput) newUrl.searchParams.set('heading', fixedHeadingInput.value || '');
+      if (fixedCollectionInput) newUrl.searchParams.set('collection', fixedCollectionInput.value || '');
+      if (fixedIdInput) newUrl.searchParams.set('id', fixedIdInput.value || '');
+
       window.history.replaceState({}, '', newUrl);
+
+      applyFixedLayoutFromInputs();
     });
   }
 });

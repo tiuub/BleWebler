@@ -97,6 +97,16 @@
 
       <!-- Text Mode Options -->
       <section id="textOptions" class="card">
+        <div id="fixedLayoutControls" class="fixed-layout-controls">
+          <h3>Fixed Label Layout</h3>
+          <p class="helper-text">Fill manually or prefill via URL params: <code>link</code>, <code>heading</code>, <code>collection</code>, <code>id</code>.</p>
+          <div class="fixed-layout-stack">
+            <input type="url" id="fixedLinkInput" placeholder="Link (QR content)" class="input-modern" />
+            <input type="text" id="fixedHeadingInput" placeholder="Heading" class="input-modern" />
+            <input type="text" id="fixedCollectionInput" placeholder="Collection" class="input-modern" />
+            <input type="text" id="fixedIdInput" placeholder="ID" class="input-modern" />
+          </div>
+        </div>
         <div class="canvas-container-wrapper" id="canvasWrapper">
           <div class="canvas-content">
             <canvas id="fabricCanvas" width="384" height="96"></canvas>
